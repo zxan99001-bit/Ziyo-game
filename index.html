@@ -1,45 +1,209 @@
-<!-- Mini App Do'kon Bo'limi (HTML) -->
-<div class="shop-container">
-  <h3>Obunachi ko'paytirish</h3>
-  
-  <select id="serviceType">
-    <option value="telegram_subscribers">Telegram Obunachi (100 obunachi = 10,000 coin)</option>
-    <option value="instagram_followers">Instagram Obunachi (100 obunachi = 15,000 coin)</option>
-  </select>
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ziyo Game</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:linear-gradient(135deg,#101827,#182b49);
+  color:white;text-align:center;
+}
+.container{max-width:430px;margin:auto;padding:20px}
+h1{margin-bottom:5px}
+.stats{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:10px;margin:20px 0
+}
+.card{
+  background:#ffffff12;border:1px solid #ffffff20;
+  border-radius:15px;padding:15px
+}
+.coin{
+  font-size:80px;border:0;background:none;
+  cursor:pointer;transition:.08s;
+}
+.coin:active{transform:scale(.85)}
+button{
+  width:100%;padding:14px;margin:6px 0;
+  border:0;border-radius:12px;
+  font-size:16px;font-weight:bold;cursor:pointer
+}
+.shop{display:none;margin-top:20px}
+.item{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#ffffff10;border-radius:14px;
+  padding:12px;margin:8px 0
+}
+.item button{width:auto;margin:0;padding:10px 14px}
+.progress{
+  height:12px;background:#ffffff20;border-radius:10px;
+  overflow:hidden;margin:10px 0
+}
+.bar{height:100%;width:0;background:#ffd43b}
+</style>
+</head>
 
-  <input type="text" id="targetLink" placeholder="Kanal yoki Profil havolasi (https://...)" />
-  <input type="number" id="quantity" placeholder="Soni (Kamida 100)" min="100" />
+<body>
+<div class="container">
 
-  <button onclick="sendOrder()">Buyurtma Berish</button>
+<h1>🪙 ZIYO GAME</h1>
+<p>Coin yig‘ing va yangi kiyimlarni oching!</p>
+
+<div class="stats">
+  <div class="card">🪙 Coin<br><b id="coins">0</b></div>
+  <div class="card">⭐ Level<br><b id="level">1</b></div>
+</div>
+
+<p>Keyingi level: <b id="need">100</b> coin</p>
+<div class="progress"><div class="bar" id="bar"></div></div>
+
+<button class="coin" onclick="tapCoin()">🪙</button>
+<p>Har bosishda: <b id="tapPower">1</b> 🪙</p>
+
+<button onclick="toggleShop()">👕 Kiyimlar do‘koni</button>
+<button onclick="dailyBonus()">🎁 Kunlik bonus</button>
+
+<div class="shop" id="shop">
+<h2>👕 Kiyimlar</h2>
+<div id="items"></div>
+</div>
+
 </div>
 
 <script>
-async function sendOrder() {
-  const serviceType = document.getElementById('serviceType').value;
-  const targetLink = document.getElementById('targetLink').value;
-  const quantity = parseInt(document.getElementById('quantity').value);
+let coins = Number(localStorage.getItem("coins") || 0);
+let level = Number(localStorage.getItem("level") || 1);
+let tapPower = Number(localStorage.getItem("tapPower") || 1);
+let owned = JSON.parse(localStorage.getItem("owned") || "[]");
 
-  if (!targetLink || !quantity) {
-    alert("Iltimos, barcha maydonlarni to'ldiring!");
+const clothes = [
+  {id:"shirt", name:"👕 Oddiy kiyim", price:1000, power:2},
+  {id:"jacket", name:"🧥 Rare kiyim", price:10000, power:5},
+  {id:"ninja", name:"🥷 Epic kiyim", price:50000, power:10},
+  {id:"crown", name:"👑 Legendary kiyim", price:200000, power:25}
+];
+
+function save(){
+  localStorage.setItem("coins",coins);
+  localStorage.setItem("level",level);
+  localStorage.setItem("tapPower",tapPower);
+  localStorage.setItem("owned",JSON.stringify(owned));
+}
+
+function levelNeed(){
+  return level * level * 100;
+}
+
+function tapCoin(){
+  coins += tapPower;
+
+  while(coins >= levelNeed()){
+    level++;
+    tapPower++;
+    alert("🎉 Level oshdi! Endi har bosishda +" + tapPower + " coin!");
+  }
+
+  save();
+  update();
+}
+
+function update(){
+  document.getElementById("coins").textContent = coins;
+  document.getElementById("level").textContent = level;
+  document.getElementById("tapPower").textContent = tapPower;
+
+  let need = levelNeed();
+  document.getElementById("need").textContent = need;
+
+  let previous = (level-1)*(level-1)*100;
+  let percent = ((coins-previous)/(need-previous))*100;
+
+  document.getElementById("bar").style.width =
+    Math.max(0,Math.min(100,percent)) + "%";
+}
+
+function toggleShop(){
+  let shop=document.getElementById("shop");
+  shop.style.display =
+    shop.style.display==="block" ? "none" : "block";
+  renderShop();
+}
+
+function renderShop(){
+  let box=document.getElementById("items");
+  box.innerHTML="";
+
+  clothes.forEach(item=>{
+    let div=document.createElement("div");
+    div.className="item";
+
+    let has=owned.includes(item.id);
+
+    div.innerHTML=`
+      <span>
+        ${item.name}<br>
+        <small>⚡ +${item.power} coin/bosish</small>
+      </span>
+      <button onclick="buy('${item.id}')">
+        ${has ? "✅ Olingan" : "🪙 "+item.price}
+      </button>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+function buy(id){
+  let item=clothes.find(x=>x.id===id);
+
+  if(owned.includes(id)){
+    alert("Bu kiyim sizda bor!");
     return;
   }
 
-  const response = await fetch('/api/order', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      userId: window.Telegram.WebApp.initDataUnsafe.user.id,
-      serviceType,
-      targetLink,
-      quantity
-    })
-  });
-
-  const result = await response.json();
-  if (result.success) {
-    alert("Buyurtmangiz qabul qilindi! Buyurtma ID: " + result.orderId);
-  } else {
-    alert("Xatolik: " + result.error);
+  if(coins < item.price){
+    alert("❌ Coin yetarli emas!");
+    return;
   }
+
+  coins -= item.price;
+  owned.push(id);
+
+  // Kiyim sotib olinganda uning bonusini qo‘shamiz
+  tapPower += item.power;
+
+  save();
+  update();
+  renderShop();
+
+  alert("🎉 "+item.name+" olindi!");
 }
+
+function dailyBonus(){
+  let today=new Date().toDateString();
+  let last=localStorage.getItem("daily");
+
+  if(last===today){
+    alert("⏳ Bugungi bonusni allaqachon oldingiz!");
+    return;
+  }
+
+  let reward=100 + level*50;
+  coins += reward;
+
+  localStorage.setItem("daily",today);
+  save();
+  update();
+
+  alert("🎁 Bonus: +"+reward+" coin!");
+}
+
+update();
 </script>
+
+</body>
+  </html>
