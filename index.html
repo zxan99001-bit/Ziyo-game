@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ziyo Coin</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(160deg, #101828, #182b4d);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .game {
+      width: 100%;
+      max-width: 430px;
+      padding: 25px 18px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      font-size: 30px;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .box {
+      flex: 1;
+      padding: 15px 8px;
+      background: rgba(255,255,255,.10);
+      border-radius: 15px;
+    }
+
+    .number {
+      display: block;
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    #coin {
+      width: 210px;
+      height: 210px;
+      margin: 20px auto 30px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ffe98a, #ffb300 45%, #d77b00);
+      border: 8px solid #ffd75a;
+      box-shadow: 0 0 35px rgba(255,190,40,.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 75px;
+      cursor: pointer;
+      transition: transform .08s;
+    }
+
+    #coin:active {
+      transform: scale(.92);
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      border: 0;
+      border-radius: 14px;
+      background: #2ea6ff;
+      color: white;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #message {
+      height: 30px;
+      margin-top: 15px;
+      color: #ffd75a;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="game">
+
+  <h1>🪙 ZIYO COIN</h1>
+
+  <div class="stats">
+    <div class="box">
+      🪙 Coin
+      <span id="score" class="number">0</span>
+    </div>
+
+    <div class="box">
+      ⭐ Level
+      <span id="level" class="number">1</span>
+    </div>
+  </div>
+
+  <div id="coin">🪙</div>
+
+  <button id="bonus">🎁 Kunlik bonus</button>
+
+  <div id="message"></div>
+
+</div>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+
+  if (tg) {
+    tg.ready();
+    tg.expand();
+  }
+
+  let score = Number(localStorage.getItem("ziyo_score")) || 0;
+  let level = Number(localStorage.getItem("ziyo_level")) || 1;
+  let bonusTaken = localStorage.getItem("ziyo_bonus") === "1";
+
+  const scoreEl = document.getElementById("score");
+  const levelEl = document.getElementById("level");
+  const coin = document.getElementById("coin");
+  const bonus = document.getElementById("bonus");
+  const message = document.getElementById("message");
+
+  function update() {
+    scoreEl.textContent = score;
+    levelEl.textContent = level;
+
+    localStorage.setItem("ziyo_score", score);
+    localStorage.setItem("ziyo_level", level);
+  }
+
+  coin.addEventListener("click", () => {
+    score += level;
+
+    if (score >= level * 100) {
+      level++;
+      message.textContent = "🎉 Yangi level!";
+    } else {
+      message.textContent = "+" + level + " 🪙";
+    }
+
+    update();
+  });
+
+  bonus.addEventListener("click", () => {
+    if (bonusTaken) {
+      message.textContent = "⏳ Bugungi bonus olingan!";
+      return;
+    }
+
+    score += 100;
+    bonusTaken = true;
+
+    localStorage.setItem("ziyo_bonus", "1");
+
+    message.textContent = "🎁 +100 Coin!";
+    update();
+  });
+
+  update();
+</script>
+
+</body>
+  </html>
